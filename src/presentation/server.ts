@@ -1,7 +1,8 @@
-import express from 'express'
+import express, { Router } from 'express'
 import path from 'path';
 
 interface Options {
+    routes: Router;
     port: number,
     puiblic_path?: string;
 }
@@ -11,9 +12,11 @@ export class Server {
     private app = express();
     private port: number;
     private puiblic_path: string;
+    private routes: Router;
 
     constructor(options: Options){
-        const { port, puiblic_path = 'public' } = options;
+        const { routes, port, puiblic_path = 'public' } = options;
+        this.routes = routes;
         this.port = port;
         this.puiblic_path = puiblic_path;
         // this.port = options.port;
@@ -23,8 +26,16 @@ export class Server {
     async start(){
 
         // ** Middleware
+        this.app.use(express.json());
+        this.app.use(express.urlencoded({extended: true}));
+
+        // ** Public Folder
         this.app.use(express.static(this.puiblic_path));
 
+        // ** ROUTES
+        this.app.use(this.routes)
+
+        // ** SPA (app-routing)
         this.app.get('*', (req, res) => {
             const indexPath = path.join(__dirname + `../../../${this.puiblic_path}/index.html`);
             res.sendFile(indexPath);
